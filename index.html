@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solar System 3D | منظومه شمسی</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#020611;color:#eaf3ff;font-family:Tahoma,Arial,sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 45%,#102342,#030712 68%)}
+header{height:58px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #203958;background:#050c19d9;z-index:2}
+.brand{font-weight:800;letter-spacing:2px;font-size:14px}.brand span{color:#63c9ff}.sub{font-size:10px;color:#8ba6c8;margin-top:4px}
+main{position:relative;flex:1;min-height:0}#space{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;z-index:1;pointer-events:none;color:#b9d8f5;text-shadow:0 1px 8px #000}.tl{top:18px;left:20px;font-size:11px;letter-spacing:2px}.tr{top:18px;right:20px;text-align:right;font-size:11px}
+.controls{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:3}
+button{cursor:pointer;border:1px solid #355477;background:#0c1a2d;color:#ddecff;border-radius:9px;padding:9px 13px;font-size:12px}
+button:hover,button.active{background:#17416a;border-color:#65baff}
+footer{z-index:2;flex:none;background:linear-gradient(0deg,#050c19 70%,#08162bdc);border-top:1px solid #294360;padding:10px 16px 12px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.planets{display:flex;gap:7px;overflow-x:auto;padding:3px 0 8px;scrollbar-width:thin}.planets button{white-space:nowrap;min-width:72px}
+.info{display:flex;align-items:center;gap:12px;border-top:1px solid #203958;padding-top:8px;min-height:45px}.picon{font-size:25px}.pname{font-weight:bold;font-size:13px}.desc{font-size:11px;color:#9eb6d4;margin-top:4px}.distance{margin-right:auto;text-align:left;color:#8ca8c9;font-size:10px;direction:ltr}
+.speed{display:flex;align-items:center;gap:8px;font-size:11px;color:#a9bfdc;margin-right:auto}.speed input{width:105px;accent-color:#57baff}
+@media(max-width:600px){header{height:48px;padding:0 12px}.brand{font-size:12px}.controls{left:7px}.controls button{padding:7px 9px}.tl,.tr{font-size:9px}footer{padding:7px}.planets button{font-size:10px;padding:7px 9px}.info{gap:8px}.speed input{width:70px}}
+</style>
+</head>
+<body>
+<header><div><div class="brand">SOLAR SYSTEM <span>3D</span></div><div class="sub">کاوشگر تعاملی منظومه شمسی</div></div><div style="text-align:left"><div style="font-size:11px;color:#70caff;letter-spacing:2px">DEEP SPACE</div><div class="sub">LIVE ORBIT SIMULATION</div></div></header>
+<main><canvas id="space"></canvas><div class="hud tl">MILKY WAY · SOL SYSTEM</div><div class="hud tr">منظومه شمسی<br><span style="color:#7194bc">مدل سه‌بعدی آموزشی</span></div>
+<div class="controls"><button id="play">Ⅱ توقف</button><button id="orbits" class="active">◎ مدارها</button><button id="labels" class="active">Aa نام‌ها</button><button id="home">⌂ نمای اصلی</button></div></main>
+<footer><div class="row"><div style="font-size:11px;color:#8cbce7">انتخاب سیاره</div><div class="speed">سرعت <input id="speed" type="range" min="0" max="5" step=".1" value="1"><span id="speedval">1×</span></div></div>
+<div class="planets" id="planets"></div><div class="info"><div class="picon" id="icon">🌍</div><div><div class="pname" id="name">زمین · Earth</div><div class="desc" id="desc">خانه ما در منظومه شمسی</div></div><div class="distance" id="dist">1 AU</div></div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const canvas=document.querySelector('#space');
+if(!window.THREE){document.querySelector('#name').textContent='برای نمایش سه‌بعدی اتصال اینترنت لازم است؛ کتابخانه گرافیکی بارگذاری نشد.';return}
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(canvas.clientWidth,canvas.clientHeight,false);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x030817,.006);
+const camera=new THREE.PerspectiveCamera(43,1,.1,300);camera.position.set(0,19,34);
+const ambient=new THREE.AmbientLight(0x8da9d0,.55);scene.add(ambient);
+const sunLight=new THREE.PointLight(0xffd39a,1800,150,1.5);scene.add(sunLight);
+const sun=new THREE.Mesh(new THREE.SphereGeometry(1.28,64,48),new THREE.MeshBasicMaterial({color:0xffc34e}));scene.add(sun);
+const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:(()=>{let c=document.createElement('canvas');c.width=c.height=128;let x=c.getContext('2d'),g=x.createRadialGradient(64,64,2,64,64,64);g.addColorStop(0,'rgba(255,240,175,.95)');g.addColorStop(.22,'rgba(255,173,48,.38)');g.addColorStop(1,'rgba(255,120,20,0)');x.fillStyle=g;x.fillRect(0,0,128,128);let t=new THREE.CanvasTexture(c);return t})(),transparent:true,depthWrite:false}));glow.scale.set(9,9,1);scene.add(glow);
+function texture(base,kind){let c=document.createElement('canvas');c.width=1024;c.height=512;let x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,1024,512);
+let seed=kind*71+13;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+if(kind===4||kind===5||kind===1){for(let y=0;y<512;y+=8){x.fillStyle=`rgba(${kind===1?'255,220,160':'70,42,25'},${.035+rnd()*.11})`;x.fillRect(0,y,1024,4+rnd()*8)}}
+for(let i=0;i<(kind===2?250:kind===3?500:350);i++){let xx=rnd()*1024,yy=rnd()*512,rr=kind===2?2+rnd()*14:1+rnd()*9;x.fillStyle=kind===2?(rnd()>.5?'rgba(35,90,50,.8)':'rgba(30,80,145,.5)'):`rgba(255,255,255,${rnd()*.16})`;x.beginPath();x.ellipse(xx,yy,rr,rr*(.3+rnd()),rnd()*3,0,Math.PI*2);x.fill()}
+if(kind===2){for(let i=0;i<18;i++){let xx=rnd()*1024,yy=rnd()*512;x.fillStyle='rgba(220,245,255,.65)';x.beginPath();x.arc(xx,yy,2+rnd()*5,0,7);x.fill()}}
+let t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+const defs=[
+['عطارد','Mercury',2.7,.19,'#898b91',0.39,'☿'],
+['زهره','Venus',4,.31,'#d8ae70',0.72,'♀'],
+['زمین','Earth',5.5,.34,'#2872bd',1,'🌍'],
+['مریخ','Mars',7.1,.25,'#b95736',1.52,'♂'],
+['مشتری','Jupiter',9.8,.91,'#c69a70',5.2,'♃'],
+['زحل','Saturn',13,.72,'#d6c08e',9.5,'🪐'],
+['اورانوس','Uranus',16,.55,'#78c9d1',19.2,'♅'],
+['نپتون','Neptune',19,.53,'#315ac1',30,'♆']];
+const objects=[],orbitLines=[],labels=[];
+function makeLabel(txt){let c=document.createElement('canvas');c.width=256;c.height=64;let x=c.getContext('2d');x.font='bold 30px Arial';x.textAlign='center';x.fillStyle='#c9e9ff';x.shadowColor='#000';x.shadowBlur=8;x.fillText(txt,128,42);let s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));s.scale.set(2.7,.68,1);return s}
+defs.forEach((d,i)=>{
+let mat=new THREE.MeshStandardMaterial({map:texture(d[4],i),roughness:.9,metalness:0});
+let mesh=new THREE.Mesh(new THREE.SphereGeometry(d[3],64,48),mat);scene.add(mesh);
+let pivot=new THREE.Group();scene.add(pivot);pivot.add(mesh);mesh.position.x=d[2];
+if(i===5){let ring=new THREE.Mesh(new THREE.RingGeometry(.95,1.55,128),new THREE.MeshStandardMaterial({color:0xcab887,side:THREE.DoubleSide,transparent:true,opacity:.78,roughness:1}));ring.rotation.x=-Math.PI/2+.25;ring.position.x=d[2];pivot.add(ring)}
+let orbit=new THREE.Mesh(new THREE.RingGeometry(d[2]-.012,d[2]+.012,180),new THREE.MeshBasicMaterial({color:0x50749b,transparent:true,opacity:.4,side:THREE.DoubleSide}));orbit.rotation.x=-Math.PI/2;scene.add(orbit);orbitLines.push(orbit);
+let label=makeLabel(d[1].toUpperCase());scene.add(label);labels.push(label);
+objects.push({pivot,mesh,d,angle:i*.8,label});
+});
+const starGeo=new THREE.BufferGeometry(),starPos=[];for(let i=0;i<2400;i++){let r=35+Math.random()*100,a=Math.random()*Math.PI*2,b=Math.acos(2*Math.random()-1);starPos.push(r*Math.sin(b)*Math.cos(a),r*Math.cos(b),r*Math.sin(b)*Math.sin(a))}
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xc8ddff,size:.13,transparent:true,opacity:.9,sizeAttenuation:true})));
+let playing=true,speed=1,showOrbits=true,showLabels=true,selected=2;
+function choose(i){selected=i;let d=defs[i];document.querySelector('#icon').textContent=d[6];document.querySelector('#name').textContent=d[0]+' · '+d[1];document.querySelector('#desc').textContent=['سطح سنگی و پر از دهانه','جو بسیار غلیظ و دمای سطح بسیار بالا','خانه ما؛ جهان شناخته‌شده دارای حیات','سیاره سرخ با آتشفشان‌های عظیم','بزرگ‌ترین سیاره منظومه شمسی','حلقه‌های دیدنی از یخ و سنگ','غول یخی با محور چرخش کج','دورترین سیاره منظومه شمسی'][i];document.querySelector('#dist').textContent=d[5]+' AU';document.querySelectorAll('#planets button').forEach((b,j)=>b.classList.toggle('active',j===i))}
+defs.forEach((d,i)=>{let b=document.createElement('button');b.textContent=d[6]+' '+d[0];b.onclick=()=>choose(i);document.querySelector('#planets').append(b)});
+document.querySelector('#play').onclick=e=>{playing=!playing;e.target.textContent=playing?'Ⅱ توقف':'▶ ادامه';e.target.classList.toggle('active',playing)};
+document.querySelector('#orbits').onclick=e=>{showOrbits=!showOrbits;orbitLines.forEach(o=>o.visible=showOrbits);e.target.classList.toggle('active',showOrbits)};
+document.querySelector('#labels').onclick=e=>{showLabels=!showLabels;labels.forEach(o=>o.visible=showLabels);e.target.classList.toggle('active',showLabels)};
+document.querySelector('#speed').oninput=e=>{speed=+e.target.value;document.querySelector('#speedval').textContent=speed.toFixed(1)+'×'};
+let yaw=0,drag=null;
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag.x)*.006;camera.position.x=Math.sin(yaw)*34;camera.position.z=Math.cos(yaw)*34;camera.lookAt(0,0,0);drag={x:e.clientX,y:e.clientY}});
+canvas.addEventListener('pointerup',()=>drag=null);
+canvas.addEventListener('wheel',e=>{camera.position.multiplyScalar(e.deltaY>0?1.06:.94);camera.position.clampLength(15,65);camera.lookAt(0,0,0)},{passive:true});
+document.querySelector('#home').onclick=()=>{yaw=0;camera.position.set(0,19,34);camera.lookAt(0,0,0)};
+function resize(){let w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(canvas);resize();
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.05);if(playing)objects.forEach((o,i)=>{o.angle+=dt*speed*(.45/(1+o.d[2]*.15));o.pivot.rotation.y=o.angle;o.mesh.rotation.y+=dt*.15;let p=o.mesh.getWorldPosition(new THREE.Vector3());o.label.position.set(p.x,p.y+o.d[3]+.55,p.z);});sun.rotation.y+=dt*.04;glow.quaternion.copy(camera.quaternion);renderer.render(scene,camera)}choose(2);animate();
+})();
+</script></body></html>
